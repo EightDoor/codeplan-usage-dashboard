@@ -4,7 +4,7 @@
 
 一个用于监控智谱 AI (GLM) Coding Plan 使用量的可视化仪表盘，支持暗黑/亮色主题切换。
 
-![Dashboard Preview](https://via.placeholder.com/1200x600?text=GLM+Usage+Dashboard)
+![Dashboard Preview](/dashboard.png)
 
 ## 功能特性
 
@@ -35,8 +35,8 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-username/glm-usage-dashboard.git
-cd glm-usage-dashboard
+git clone https://github.com/your-username/codeplan-usage-dashboard.git
+cd codeplan-usage-dashboard
 
 # 安装依赖
 pnpm install
@@ -65,7 +65,7 @@ pnpm build
 2. **Vercel 部署**
    - 访问 [Vercel](https://vercel.com/) 并使用 GitHub 登录
    - 点击 **Add New...** → **Project**
-   - 选择你 Fork 的 `glm-usage-dashboard` 仓库
+   - 选择你 Fork 的 `codeplan-usage-dashboard` 仓库
    - 点击 **Deploy** 完成部署
 
 ### 方式二：Vercel CLI 部署
@@ -75,7 +75,7 @@ pnpm build
 pnpm add -g vercel
 
 # 进入项目目录
-cd glm-usage-dashboard
+cd codeplan-usage-dashboard
 
 # 登录 Vercel
 vercel login
@@ -115,7 +115,7 @@ vercel
 ## 项目结构
 
 ```
-glm-usage-dashboard/
+codeplan-usage-dashboard/
 ├── src/
 │   ├── components/
 │   │   ├── UsageCard.vue      # 用量卡片组件

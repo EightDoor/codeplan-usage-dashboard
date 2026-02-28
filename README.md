@@ -4,7 +4,7 @@
 
 A visual dashboard for monitoring Zhipu AI (GLM) Coding Plan usage with dark/light theme support.
 
-![Dashboard Preview](https://via.placeholder.com/1200x600?text=GLM+Usage+Dashboard)
+![Dashboard Preview](/dashboard.png)
 
 ## Features
 
@@ -35,8 +35,8 @@ A visual dashboard for monitoring Zhipu AI (GLM) Coding Plan usage with dark/lig
 
 ```bash
 # Clone the project
-git clone https://github.com/your-username/glm-usage-dashboard.git
-cd glm-usage-dashboard
+git clone https://github.com/your-username/codeplan-usage-dashboard.git
+cd codeplan-usage-dashboard
 
 # Install dependencies
 pnpm install
@@ -65,7 +65,7 @@ Build output is in `dist` directory.
 2. **Deploy with Vercel**
    - Visit [Vercel](https://vercel.com/) and login with GitHub
    - Click **Add New...** → **Project**
-   - Select your forked `glm-usage-dashboard` repository
+   - Select your forked `codeplan-usage-dashboard` repository
    - Click **Deploy** to complete deployment
 
 ### Option 2: Vercel CLI Deploy
@@ -75,7 +75,7 @@ Build output is in `dist` directory.
 pnpm add -g vercel
 
 # Enter project directory
-cd glm-usage-dashboard
+cd codeplan-usage-dashboard
 
 # Login to Vercel
 vercel login
@@ -115,7 +115,7 @@ Settings are automatically saved to browser localStorage.
 ## Project Structure
 
 ```
-glm-usage-dashboard/
+codeplan-usage-dashboard/
 ├── src/
 │   ├── components/
 │   │   ├── UsageCard.vue      # Usage card component
