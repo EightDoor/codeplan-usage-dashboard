@@ -6,7 +6,7 @@
 
 **在线访问**: https://codeplan-usage-dashboard.vercel.app
 
-![Dashboard Preview](/dashboard.png)
+![Dashboard Preview](dashboard.png)
 
 ## 功能特性
 
