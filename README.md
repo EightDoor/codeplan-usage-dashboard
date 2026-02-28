@@ -4,6 +4,8 @@
 
 一个用于监控智谱 AI (GLM) Coding Plan 使用量的可视化仪表盘，支持暗黑/亮色主题切换。
 
+**在线访问**: https://codeplan-usage-dashboard.vercel.app
+
 ![Dashboard Preview](/dashboard.png)
 
 ## 功能特性
