@@ -16,11 +16,9 @@ function formatDateTime(date) {
 function getTimeRange() {
   const now = new Date();
   const start = new Date(now);
-  start.setDate(now.getDate() - 1);
-  start.setMinutes(0);
+  start.setHours(0, 0, 0, 0);
   
   const end = new Date(now);
-  end.setMinutes(59);
   
   return {
     startTime: formatDateTime(start),
