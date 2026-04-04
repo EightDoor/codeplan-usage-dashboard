@@ -13,13 +13,13 @@
             <input 
               :type="showApiKey ? 'text' : 'password'" 
               v-model="localConfig.apiKey" 
-              placeholder="请输入 GLM API Key"
+              :placeholder="provider === 'minimax' ? '请输入 MiniMax Token Plan API Key' : '请输入 GLM API Key'"
             />
             <button class="toggle-visibility" @click="showApiKey = !showApiKey">
               {{ showApiKey ? '隐藏' : '显示' }}
             </button>
           </div>
-          <p class="help-text">在智谱AI开放平台获取 API Key</p>
+          <p class="help-text">{{ provider === 'minimax' ? '在 MiniMax 开放平台获取 Token Plan API Key' : '在智谱AI开放平台获取 API Key' }}</p>
         </div>
         
         <div class="form-group">
@@ -64,6 +64,10 @@ const props = defineProps({
   colors: {
     type: Object,
     default: () => ({})
+  },
+  provider: {
+    type: String,
+    default: 'glm'
   }
 });
 
@@ -81,7 +85,7 @@ function close() {
 }
 
 function save() {
-  emit('save', { ...localConfig.value });
+  emit('save', { ...localConfig.value, provider: props.provider });
   close();
 }
 </script>
