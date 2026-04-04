@@ -1,10 +1,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { fetchUsageData, loadConfig, saveConfig, formatTokens, formatNumber } from './services/glmApi';
+import { fetchUsageData as fetchMinimaxUsageData } from './services/minimaxApi';
 import { useTheme } from './composables/useTheme';
 import UsageCard from './components/UsageCard.vue';
 import TrendChart from './components/TrendChart.vue';
 import SettingsModal from './components/SettingsModal.vue';
+import ProviderTabs from './components/ProviderTabs.vue';
+import PlanInfoCard from './components/PlanInfoCard.vue';
 
 const { themes, currentTheme, colors, setTheme, cycleTheme, getThemeLabel } = useTheme();
 
@@ -16,9 +19,17 @@ const lastUpdate = ref(null);
 const showSettings = ref(false);
 let refreshTimer = null;
 
+const activeProvider = ref(localStorage.getItem('glm-usage-active-tab') || 'glm');
+const minimaxUsageData = ref(null);
+
+const providers = [
+  { id: 'glm', name: 'GLM' },
+  { id: 'minimax', name: 'MiniMax' }
+];
+
 const currentConfig = computed(() => {
   const allConfigs = config.value.providers || {};
-  return allConfigs['glm'] || { apiKey: '', autoRefresh: false, refreshInterval: 60000 };
+  return allConfigs[activeProvider.value] || { apiKey: '', autoRefresh: false, refreshInterval: 60000 };
 });
 
 const hasApiKey = computed(() => !!currentConfig.value.apiKey);
@@ -43,6 +54,25 @@ const historyData = computed(() => {
   return usageData.value.history;
 });
 
+const minimaxTokenQuota = computed(() => {
+  if (!minimaxUsageData.value) return { used: 0, total: 0, pct: 0 };
+  return minimaxUsageData.value.quotas?.token5h || { used: 0, total: 0, pct: 0 };
+});
+
+const minimaxPlanInfo = computed(() => {
+  if (!minimaxUsageData.value) return { planName: '', resetTime: 0 };
+  return {
+    planName: minimaxUsageData.value.planName || 'Unknown',
+    resetTime: minimaxUsageData.value.resetTime || 0
+  };
+});
+
+const minimaxTotals = computed(() => {
+  if (!minimaxUsageData.value) return { calls: 0, tokens: 0 };
+  const q = minimaxUsageData.value.quotas?.token5h || { used: 0 };
+  return { calls: q.used, tokens: q.used };
+});
+
 const lastUpdateTime = computed(() => {
   if (!lastUpdate.value) return '--:--:--';
   return new Date(lastUpdate.value).toLocaleTimeString('zh-CN', { hour12: false });
@@ -59,8 +89,14 @@ async function loadData() {
   error.value = '';
   
   try {
-    const data = await fetchUsageData(apiKey);
-    usageData.value = data;
+    const data = activeProvider.value === 'glm'
+      ? await fetchUsageData(apiKey)
+      : await fetchMinimaxUsageData(apiKey);
+    if (activeProvider.value === 'glm') {
+      usageData.value = data;
+    } else {
+      minimaxUsageData.value = data;
+    }
     lastUpdate.value = Date.now();
   } catch (e) {
     error.value = e.message || '获取数据失败';
@@ -76,7 +112,7 @@ function openSettings() {
 
 function handleSaveConfig(newConfig) {
   const providers = config.value.providers || {};
-  providers['glm'] = {
+  providers[activeProvider.value] = {
     apiKey: newConfig.apiKey,
     autoRefresh: newConfig.autoRefresh,
     refreshInterval: newConfig.refreshInterval
@@ -92,6 +128,21 @@ function handleSaveConfig(newConfig) {
   
   if (newConfig.apiKey) {
     loadData();
+  }
+}
+
+function handleTabSwitch(providerId) {
+  activeProvider.value = providerId;
+  localStorage.setItem('glm-usage-active-tab', providerId);
+  stopAutoRefresh();
+  error.value = '';
+  usageData.value = null;
+  minimaxUsageData.value = null;
+  if (currentConfig.value.apiKey) {
+    loadData();
+    if (currentConfig.value.autoRefresh) {
+      startAutoRefresh(currentConfig.value.refreshInterval);
+    }
   }
 }
 
@@ -118,6 +169,10 @@ watch(() => currentConfig.value.autoRefresh, (enabled) => {
 });
 
 onMounted(() => {
+  const savedTab = localStorage.getItem('glm-usage-active-tab');
+  if (savedTab && ['glm', 'minimax'].includes(savedTab)) {
+    activeProvider.value = savedTab;
+  }
   if (currentConfig.value.apiKey) {
     loadData();
     if (currentConfig.value.autoRefresh) {
@@ -146,6 +201,11 @@ onUnmounted(() => {
       <div class="header-left">
         <h1 class="title">GLM 用量监控</h1>
       </div>
+      <ProviderTabs
+        :providers="providers"
+        :activeProvider="activeProvider"
+        @switch="handleTabSwitch"
+      />
       <div class="header-right">
         <button class="icon-btn theme-btn" @click="cycleTheme" :title="getThemeLabel(currentTheme)">
           <span class="btn-icon">🌙</span>
@@ -180,47 +240,76 @@ onUnmounted(() => {
 
       <!-- Dashboard -->
       <div v-else class="dashboard">
-        <!-- Quota Cards -->
-        <div class="quota-section">
-          <UsageCard 
-            title="Token (5小时)" 
-            :used="tokenQuota.used" 
-            :total="tokenQuota.total" 
-            :percentage="tokenQuota.pct"
-            type="token"
-            :colors="colors"
-          />
-          <UsageCard 
-            title="MCP (月度)" 
-            :used="mcpQuota.used" 
-            :total="mcpQuota.total" 
-            :percentage="mcpQuota.pct"
-            type="mcp"
-            :colors="colors"
-          />
-        </div>
-
-        <!-- Stats Row -->
-        <div class="stats-section">
-          <div class="stat-card">
-            <div class="stat-label">今日调用次数</div>
-            <div class="stat-value">{{ formatNumber(totals.calls) }}</div>
-            <div class="stat-unit">次</div>
+        <!-- GLM Dashboard -->
+        <template v-if="activeProvider === 'glm'">
+          <div class="quota-section">
+            <UsageCard 
+              title="Token (5小时)" 
+              :used="tokenQuota.used" 
+              :total="tokenQuota.total" 
+              :percentage="tokenQuota.pct"
+              type="token"
+              :colors="colors"
+            />
+            <UsageCard 
+              title="MCP (月度)" 
+              :used="mcpQuota.used" 
+              :total="mcpQuota.total" 
+              :percentage="mcpQuota.pct"
+              type="mcp"
+              :colors="colors"
+            />
           </div>
-          <div class="stat-divider"></div>
-          <div class="stat-card">
-            <div class="stat-label">Token 消耗总量</div>
-            <div class="stat-value">{{ formatTokens(totals.tokens) }}</div>
-            <div class="stat-unit">tokens</div>
+          <div class="stats-section">
+            <div class="stat-card">
+              <div class="stat-label">今日调用次数</div>
+              <div class="stat-value">{{ formatNumber(totals.calls) }}</div>
+              <div class="stat-unit">次</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-card">
+              <div class="stat-label">Token 消耗总量</div>
+              <div class="stat-value">{{ formatTokens(totals.tokens) }}</div>
+              <div class="stat-unit">tokens</div>
+            </div>
           </div>
-        </div>
-
-        <!-- Chart Section -->
-        <div class="chart-section">
-          <TrendChart :historyData="historyData" :colors="colors" />
-        </div>
-
-        <!-- Footer Actions -->
+          <div class="chart-section">
+            <TrendChart :historyData="historyData" :colors="colors" />
+          </div>
+        </template>
+        
+        <!-- MiniMax Dashboard -->
+        <template v-else>
+          <div class="quota-section">
+            <UsageCard 
+              title="M2.7 请求 (5小时)" 
+              :used="minimaxTokenQuota.used" 
+              :total="minimaxTokenQuota.total" 
+              :percentage="minimaxTokenQuota.pct"
+              type="token"
+              :colors="colors"
+            />
+            <PlanInfoCard 
+              :planName="minimaxPlanInfo.planName"
+              :resetTime="minimaxPlanInfo.resetTime"
+              :remainsTime="minimaxPlanInfo.resetTime"
+            />
+          </div>
+          <div class="stats-section">
+            <div class="stat-card">
+              <div class="stat-label">已用请求数</div>
+              <div class="stat-value">{{ formatNumber(minimaxTotals.calls) }}</div>
+              <div class="stat-unit">次</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-card">
+              <div class="stat-label">剩余请求</div>
+              <div class="stat-value">{{ formatNumber(Math.max(0, minimaxTokenQuota.total - minimaxTokenQuota.used)) }}</div>
+              <div class="stat-unit">次</div>
+            </div>
+          </div>
+        </template>
+        
         <div class="footer-section">
           <button class="refresh-btn" @click="loadData" :disabled="loading">
             <span class="refresh-icon" :class="{ spinning: loading }">🔄</span>
@@ -235,6 +324,7 @@ onUnmounted(() => {
       :visible="showSettings" 
       :config="currentConfig"
       :colors="colors"
+      :provider="activeProvider"
       @update:visible="showSettings = $event"
       @save="handleSaveConfig"
     />
