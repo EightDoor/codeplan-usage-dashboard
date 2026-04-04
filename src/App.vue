@@ -192,7 +192,7 @@ onUnmounted(() => {
     <div class="disclaimer-banner">
       <div class="disclaimer-content">
         <span class="disclaimer-icon">⚠️</span>
-        <span>API Key 仅存储在浏览器本地，接口通过 Vercel 代理转发，请确保遵守智谱AI服务条款，仅供个人学习娱乐使用</span>
+        <span>API Key 仅存储在浏览器本地，接口通过 Vercel 代理转发，请确保遵守相关服务商条款，仅供个人学习娱乐使用</span>
       </div>
     </div>
 
@@ -225,7 +225,7 @@ onUnmounted(() => {
       <!-- Empty State -->
       <div v-if="!hasApiKey" class="empty-state">
         <div class="empty-icon">🔑</div>
-        <h2>欢迎使用 GLM 用量监控</h2>
+        <h2>欢迎使用 {{ activeProvider === 'minimax' ? 'MiniMax' : 'GLM' }} 用量监控</h2>
         <p>请先配置您的 API Key 开始监控用量</p>
         <button class="primary-btn" @click="openSettings">配置 API Key</button>
       </div>
