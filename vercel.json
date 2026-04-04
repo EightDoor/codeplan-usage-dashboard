@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/monitor/(.*)", "destination": "/api/monitor.js" },
+    { "source": "/api/minimax/(.*)", "destination": "/api/minimax.js" },
     { "source": "/(.*)", "destination": "/" }
   ]
 }

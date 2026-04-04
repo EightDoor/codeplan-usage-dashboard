@@ -10,6 +10,11 @@ export default defineConfig({
         target: 'https://open.bigmodel.cn',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/monitor/, '/api/monitor')
+      },
+      '/api/minimax': {
+        target: 'https://api.minimaxi.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/minimax/, '/v1/api/openplatform')
       }
     }
   }
