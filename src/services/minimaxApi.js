@@ -49,12 +49,29 @@ function processData(data) {
   }
 
   const modelRemains = data.model_remains || [];
-  const planName = data.plan_name || 'Unknown';
+  let planName = data.plan_name || 'Unknown';
+
+  // CN 套餐映射表（用户使用 api.minimaxi.com CN 端点）
+  const CN_PLAN_MAP = { 600: 'Starter', 1500: 'Plus', 4500: 'Max' };
+  // Global 套餐映射表
+  const GLOBAL_PLAN_MAP = { 100: 'Starter', 300: 'Plus', 1000: 'Max', 2000: 'Ultra' };
 
   // Find the primary model (MiniMax-M2.7 or similar)
   const primaryModel = modelRemains.find(m => 
     m.model_name && (m.model_name.includes('MiniMax-M2') || m.model_name.includes('M2'))
   ) || modelRemains[0];
+
+  // 如果 plan_name 缺失，从 primaryModel 的 total_count 推断
+  let inferredPlanName = null;
+  if (primaryModel && primaryModel.current_interval_total_count) {
+    const total = primaryModel.current_interval_total_count;
+    // 优先尝试 CN 映射（用户使用 CN 端点）
+    inferredPlanName = CN_PLAN_MAP[total] || GLOBAL_PLAN_MAP[total] || null;
+  }
+  // 如果没有显式 plan_name，使用推断结果
+  if (!data.plan_name && inferredPlanName) {
+    planName = inferredPlanName;
+  }
 
   // Detect remains_time unit: < 100000 = seconds, otherwise milliseconds
   let resetTimeSeconds = 0;
@@ -96,11 +113,29 @@ function processData(data) {
     }
   });
 
+  const nonTextModels = [];
+
+  modelRemains.forEach((model) => {
+    if (!model.model_name) return;
+    const total = model.current_interval_total_count || 0;
+    // 跳过文本模型和无配额模型
+    if (model.model_name.includes('MiniMax-M') || model.model_name.includes('M2')) return;
+    if (total <= 0) return;
+
+    const remaining = model.current_interval_usage_count || 0;
+    let used = total - remaining;
+    if (used < 0) used = 0;
+    if (used > total) used = total;
+    const pct = total > 0 ? (used / total * 100).toFixed(2) : '0.00';
+    nonTextModels.push({ modelName: model.model_name, used, total, pct });
+  });
+
   return {
     platform: 'MiniMax',
     planName,
     resetTime: resetTimeSeconds,
     quotas,
+    nonTextModels,
     timestamp: Date.now()
   };
 }

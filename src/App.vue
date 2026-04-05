@@ -8,6 +8,7 @@ import TrendChart from './components/TrendChart.vue';
 import SettingsModal from './components/SettingsModal.vue';
 import ProviderTabs from './components/ProviderTabs.vue';
 import PlanInfoCard from './components/PlanInfoCard.vue';
+import ModelQuotaList from './components/ModelQuotaList.vue';
 
 const { themes, currentTheme, colors, setTheme, cycleTheme, getThemeLabel } = useTheme();
 
@@ -71,6 +72,11 @@ const minimaxTotals = computed(() => {
   if (!minimaxUsageData.value) return { calls: 0, tokens: 0 };
   const q = minimaxUsageData.value.quotas?.token5h || { used: 0 };
   return { calls: q.used, tokens: q.used };
+});
+
+const minimaxNonTextModels = computed(() => {
+  if (!minimaxUsageData.value) return [];
+  return minimaxUsageData.value.nonTextModels || [];
 });
 
 const lastUpdateTime = computed(() => {
@@ -295,6 +301,10 @@ onUnmounted(() => {
               :remainsTime="minimaxPlanInfo.resetTime"
             />
           </div>
+          <ModelQuotaList 
+            v-if="minimaxNonTextModels.length > 0" 
+            :models="minimaxNonTextModels" 
+          />
           <div class="stats-section">
             <div class="stat-card">
               <div class="stat-label">已用请求数</div>
